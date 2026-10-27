@@ -1,0 +1,80 @@
+name: stack
+services:
+  caddy:
+    image: caddy:2.11
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL}
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks: [web]
+
+  vaultwarden:
+    image: vaultwarden/server:1.37.4
+    restart: unless-stopped
+    environment: 
+      DOMAIN: https://vault.${DOMAIN}
+      SIGNUPS_ALLOWED: ${VW_SIGNUPS_ALLOWED}
+      ADMIN_TOKEN: ${VW_ADMIN_TOKEN}
+    volumes:
+      - vaultwarden_data:/data
+    networks: [web]
+
+  bookstack:
+    image: lscr.io/linuxserver/bookstack:version-v26.09   # LinuxServer.io's BookStack image
+    restart: unless-stopped
+    environment:
+      PUID: "1000"                   # user ID the app runs as inside the container
+      PG ID: "1000"                   # group ID, same idea
+      TZ: America/Toronto
+      APP_URL: https://wiki.${DOMAIN}
+      APP_KEY: ${BOOKSTACK_APP_KEY}  # encryption key for sessions; generated in Part B
+      DB_HOST: bookstack-db          # the database service's name: Compose's DNS resolves it
+      DB_PORT: "3306"
+      DB_DATABASE: bookstack
+      DB_USERNAME: bookstack
+      DB_PASSWORD: ${BOOKSTACK_DB_PASSWORD}
+    volumes:
+      - bookstack_config:/config     # uploads, settings and logs
+    depends_on:
+      bookstack-db:
+        condition: service_healthy   # wait until the database answers, not just until it starts
+    networks: [web, bookstack-db]    # web: reachable by Caddy; bookstack-db: reaches its database
+
+  bookstack-db:
+    image: mariadb:11.4              # official MariaDB, 11.4 long-term-support series
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: ${BOOKSTACK_DB_ROOT_PASSWORD}
+      MARIADB_DATABASE: bookstack    # created automatically on first start
+      MARIADB_USER: bookstack        # this user gets full rights on that database only
+      MARIADB_PASSWORD: ${BOOKSTACK_DB_PASSWORD}   # must match DB_PASSWORD above
+    volumes:
+      - bookstack_db:/var/lib/mysql  # the database files
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]   # script shipped in the image
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [bookstack-db]         # only on the private network
+
+networks:
+  web: {}                            # shared by Caddy and the apps it serves
+  bookstack-db:
+    internal: true                   # no route in or out: only BookStack can reach its database
+
+volumes:                             # named volumes: data that survives "docker compose down"
+  caddy_data: {}
+  caddy_config: {}
+  vaultwarden_data: {}
+  bookstack_config: {}
+  bookstack_db: {}
+
+    
