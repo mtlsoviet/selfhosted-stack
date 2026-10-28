@@ -13,3 +13,7 @@ vault.{$DOMAIN} {
 wiki.{$DOMAIN} {
 	reverse_proxy bookstack:80
 }
+
+home.{$DOMAIN} {
+	reverse_proxy portal:8080      # nginx-unprivileged listens on 8080, not 80
+}

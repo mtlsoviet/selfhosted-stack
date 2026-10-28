@@ -1,0 +1,4 @@
+[
+  { "name": "Vaultwarden", "url": "https://vault.comradecollective.ca", "description": "Password manager" },
+  { "name": "BookStack", "url": "https://wiki.comradecollective.ca", "description": "Documentation and runbooks" }
+]

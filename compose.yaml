@@ -19,7 +19,7 @@ services:
   vaultwarden:
     image: vaultwarden/server:1.37.4
     restart: unless-stopped
-    environment: 
+    environment:
       DOMAIN: https://vault.${DOMAIN}
       SIGNUPS_ALLOWED: ${VW_SIGNUPS_ALLOWED}
       ADMIN_TOKEN: ${VW_ADMIN_TOKEN}
@@ -32,7 +32,7 @@ services:
     restart: unless-stopped
     environment:
       PUID: "1000"                   # user ID the app runs as inside the container
-      PG ID: "1000"                   # group ID, same idea
+      PGID: "1000"                   # group ID, same idea
       TZ: America/Toronto
       APP_URL: https://wiki.${DOMAIN}
       APP_KEY: ${BOOKSTACK_APP_KEY}  # encryption key for sessions; generated in Part B
@@ -65,6 +65,13 @@ services:
       retries: 5
     networks: [bookstack-db]         # only on the private network
 
+  portal:
+    image: YOUR_DOCKERHUB_USER/portal:1.0.0      # your image, the exact released version
+    restart: unless-stopped
+    volumes:
+      - ./portal/apps.json:/usr/share/nginx/html/apps.json:ro   # the real list replaces the sample
+    networks: [web]
+
 networks:
   web: {}                            # shared by Caddy and the apps it serves
   bookstack-db:
@@ -77,4 +84,3 @@ volumes:                             # named volumes: data that survives "docker
   bookstack_config: {}
   bookstack_db: {}
 
-    
