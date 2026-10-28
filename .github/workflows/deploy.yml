@@ -1,0 +1,52 @@
+name: Validate and deploy
+
+on:
+  pull_request:                   # validate every pull request
+  push:
+    branches: [main]              # validate, then deploy, after every merge
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-apps              # never two deployments to apps at the same time
+  cancel-in-progress: false       # a running deployment finishes; the next one waits
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Check compose.yaml
+        run: docker compose --env-file .env.example config --quiet
+
+      - name: Check the Caddyfile
+        run: |
+          docker run --rm -e DOMAIN=comradecollective.ca -e ACME_EMAIL=cujalex@gmail.com \
+            -v "$PWD/caddy/Caddyfile:/etc/caddy/Caddyfile:ro" \
+            caddy:2.11 caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+        # Runs the same Caddy version as apps; "validate" loads the config without starting a server
+
+      - name: Check apps.json
+        run: jq empty portal/apps.json   # fails if the file isn't valid JSON
+
+  deploy:
+    needs: validate                   # runs only if validate passed
+    if: github.event_name == 'push'   # only after a merge to main, never for a pull request
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Prepare SSH
+        env:                          # secrets passed as environment variables, not pasted into the script
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          APPS_KNOWN_HOSTS: ${{ secrets.APPS_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$APPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+      - name: Deploy to apps
+        env:
+          APPS_HOST: ${{ secrets.APPS_HOST }}
+        run: ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes "deploy@$APPS_HOST"
