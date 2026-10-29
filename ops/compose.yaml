@@ -76,6 +76,16 @@ services:
       - uptime_kuma_data:/app/data       # its monitors and history live in a database here
     networks: [web]
 
+  garage:
+    image: dxflrs/garage:v2.3.0
+    restart: unless-stopped
+    volumes:
+      - ./garage/garage.toml:/etc/garage.toml:ro
+      - garage_meta:/var/lib/garage/meta
+      - garage_data:/var/lib/garage/data
+    networks: [web]                                # no ports: only Caddy reaches it
+
+
 networks:
   web: {}
   monitoring: {}                         # Prometheus, Alertmanager, Grafana talk on this one
