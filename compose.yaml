@@ -99,8 +99,6 @@ services:
       - /var/lib/docker/:/var/lib/docker:ro
       - /dev/disk/:/dev/disk:ro
 
-
-
 networks:
   web: {}                            # shared by Caddy and the apps it serves
   bookstack-db:
