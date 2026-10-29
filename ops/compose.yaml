@@ -97,3 +97,5 @@ volumes:
   alertmanager_data: {}
   grafana_data: {}
   uptime_kuma_data: {}
+  garage_meta: {}
+  garage_data: {}
