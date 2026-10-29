@@ -1,0 +1,17 @@
+metadata_dir = "/var/lib/garage/meta"    # Garage's index of what is stored where
+data_dir = "/var/lib/garage/data"        # the stored data itself
+db_engine = "sqlite"                     # the database used for the index
+replication_factor = 1                   # one copy of everything: a single-server lab
+                                         # (real clusters use 3 servers and 3 copies)
+rpc_bind_addr = "[::]:3901"              # port Garage servers use to talk to each other
+rpc_public_addr = "127.0.0.1:3901"       # just this one server here
+rpc_secret = "REPLACE_RPC_SECRET"        # 64 hex characters
+
+[s3_api]
+s3_region = "garage"                     # the region name clients must use
+api_bind_addr = "[::]:3900"              # the S3 API: what restic will talk to
+root_domain = ".s3.example.com"
+
+[admin]
+api_bind_addr = "[::]:3903"
+admin_token = "REPLACE_ADMIN_TOKEN"
