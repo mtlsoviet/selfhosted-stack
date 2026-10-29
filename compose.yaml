@@ -72,6 +72,35 @@ services:
       - ./portal/apps.json:/usr/share/nginx/html/apps.json:ro   # the real list replaces the sample
     networks: [web]
 
+  node-exporter:
+    image: prom/node-exporter:v1.12.1
+    restart: unless-stopped
+    network_mode: host        # use the VM's own network: no published port, so ufw applies to 9100
+    pid: host                 # see the VM's processes, not only the container's
+    command:
+      - --path.rootfs=/host   # read disks and filesystems from the host root mounted below
+    volumes:
+      - /:/host:ro,rslave     # the VM's whole filesystem, read-only; rslave = also see mounts made later
+
+  cadvisor:
+    image: ghcr.io/google/cadvisor:0.60.6
+    restart: unless-stopped
+    network_mode: host        # listens on the VM's port 8080, protected by ufw
+    privileged: true          # cAdvisor reads kernel and cgroup data that needs extra rights
+    devices:
+      - /dev/kmsg             # kernel messages (out-of-memory events)
+    command:
+      - --docker_only=true            # report containers, not every system process
+      - --housekeeping_interval=30s   # collect every 30 s instead of 1 s: much less CPU
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro          # the Docker socket, to list containers
+      - /sys:/sys:ro                  # cgroups: the per-container CPU and memory numbers
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+
+
+
 networks:
   web: {}                            # shared by Caddy and the apps it serves
   bookstack-db:
