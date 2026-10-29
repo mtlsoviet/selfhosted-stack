@@ -1,1 +1,4 @@
 .env
+ops/.env
+ops/secrets/
+ops/garage/garage.toml

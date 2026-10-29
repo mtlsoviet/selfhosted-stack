@@ -1,0 +1,89 @@
+name: ops
+
+services:
+  caddy:
+    image: caddy:2.11
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    environment:
+      DOMAIN: ${DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL}
+      APPS_IP: ${APPS_IP}
+    volumes:
+      - ./caddy:/etc/caddy:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks: [web]
+
+  node-exporter:
+    image: prom/node-exporter:v1.12.1
+    restart: unless-stopped
+    network_mode: host
+    pid: host
+    command: [--path.rootfs=/host]
+    volumes:
+      - /:/host:ro,rslave
+
+  prometheus:
+    image: prom/prometheus:v3.13.1
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=30d   # keep 30 days of history, then delete the oldest
+    volumes:
+      - ./prometheus:/etc/prometheus:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "127.0.0.1:9090:9090"           # its web page, reachable only from ops itself
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks: [monitoring]
+
+  alertmanager:
+    image: prom/alertmanager:v0.31.1
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+      - --storage.path=/alertmanager
+    volumes:
+      - ./alertmanager:/etc/alertmanager:ro
+      - ./secrets/discord_webhook:/run/secrets/discord_webhook:ro
+      - alertmanager_data:/alertmanager
+    ports:
+      - "127.0.0.1:9093:9093"
+    networks: [monitoring]
+
+  grafana:
+    image: grafana/grafana:13.1.1
+    restart: unless-stopped
+    environment:
+      GF_SERVER_ROOT_URL: https://grafana.${DOMAIN}     # its public address, for correct links
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: "false"                    # nobody can create an account
+      GF_ANALYTICS_REPORTING_ENABLED: "false"            # don't send usage statistics
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro   # data source + dashboard list, from Git
+      - ./grafana/dashboards:/etc/grafana/dashboards:ro       # the dashboards themselves, from Git
+      - grafana_data:/var/lib/grafana
+    networks: [web, monitoring]          # web: Caddy reaches it; monitoring: it reaches Prometheus
+
+  uptime-kuma:
+    image: louislam/uptime-kuma:2.5.3
+    restart: unless-stopped
+    volumes:
+      - uptime_kuma_data:/app/data       # its monitors and history live in a database here
+    networks: [web]
+
+networks:
+  web: {}
+  monitoring: {}                         # Prometheus, Alertmanager, Grafana talk on this one
+
+volumes:
+  caddy_data: {}
+  caddy_config: {}
+  prometheus_data: {}
+  alertmanager_data: {}
+  grafana_data: {}
+  uptime_kuma_data: {}
