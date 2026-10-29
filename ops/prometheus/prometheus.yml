@@ -1,0 +1,28 @@
+global:
+  scrape_interval: 15s         # collect every target every 15 seconds
+  evaluation_interval: 15s     # check the alert rules every 15 seconds
+
+rule_files:
+  - /etc/prometheus/rules.yml
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ["alertmanager:9093"]   # where firing alerts are sent
+
+scrape_configs:                  # one "job" per kind of target
+  - job_name: prometheus         # Prometheus watches itself
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: node
+    static_configs:
+      - targets: ["apps.comradecollective.ca:9100"]
+        labels: {vm: apps}       # a label we add, so alerts and graphs say which VM
+      - targets: ["host.docker.internal:9100"]
+        labels: {vm: ops}
+
+  - job_name: cadvisor
+    static_configs:
+      - targets: ["apps.comradecollective.ca:8080"]
+        labels: {vm: apps}

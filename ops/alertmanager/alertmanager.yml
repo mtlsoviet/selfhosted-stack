@@ -1,0 +1,12 @@
+route:
+  receiver: discord
+  group_by: [alertname, vm]   # one message per alert type and VM, not one per scrape
+  group_wait: 30s             # wait 30 s to batch alerts that fire together
+  group_interval: 5m          # new alerts in an existing group: at most every 5 minutes
+  repeat_interval: 4h         # remind every 4 hours while it's still firing
+
+receivers:
+  - name: discord
+    discord_configs:
+      - webhook_url_file: /run/secrets/discord_webhook   # read the URL from a file
+        send_resolved: true                              # post when it's fixed
