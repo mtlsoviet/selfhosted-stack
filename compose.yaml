@@ -99,6 +99,22 @@ services:
       - /var/lib/docker/:/var/lib/docker:ro
       - /dev/disk/:/dev/disk:ro
 
+  stack-backup:
+    image: alexvirtu/stack-backup:1.0.0
+    profiles: [backup]
+    environment:
+      RESTIC_REPOSITORY: s3:https://s3.${DOMAIN}/backups   # restic's address for the Garage bucket
+      RESTIC_PASSWORD: ${RESTIC_PASSWORD}                  # encrypts the backups: never lose it
+      AWS_ACCESS_KEY_ID: ${GARAGE_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${GARAGE_SECRET_KEY}
+      AWS_DEFAULT_REGION: garage                           # must match s3_region in garage.toml
+      BOOKSTACK_DB_ROOT_PASSWORD: ${BOOKSTACK_DB_ROOT_PASSWORD}
+      TZ: America/Toronto
+    volumes:
+      - vaultwarden_data:/data/vaultwarden    # read-write: sqlite3 needs it to make a safe copy
+      - bookstack_config:/data/bookstack:ro   # BookStack's uploads and settings, read-only
+    networks: [web, bookstack-db]
+
 networks:
   web: {}                            # shared by Caddy and the apps it serves
   bookstack-db:
