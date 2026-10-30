@@ -20,9 +20,9 @@ All commands run on apps as deploy, inside /opt/selfhosted-stack, unless stated 
 
 1. Become deploy and go to the stack folder
 bash
-# Run on: apps
+Run on: apps
 sudo -iu deploy
-# Run on: apps (as deploy)
+Run on: apps (as deploy)
 cd /opt/selfhosted-stack
 
 2. Check which backups exist
@@ -81,9 +81,9 @@ Clean up
 The restored file is an unencrypted copy of the whole wiki. Delete it (root owns it):
 
 bash
-# Run on: apps (as deploy)
+Run on: apps (as deploy)
 exit
-# Run on: apps
+Run on: apps
 sudo rm -rf /home/deploy/restore
 
 If something fails
