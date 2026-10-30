@@ -2,12 +2,12 @@
 
 # Global options: this first block, with no site name, applies to everything
 {
-	email {$ACME_EMAIL}    # {$NAME} = an environment variable, filled in when Caddy loads the file
+	email {$ACME_EMAIL}
 }
 
 # One block per site. The name is the hostname; Caddy gets and renews its certificate by itself.
 vault.{$DOMAIN} {
-	reverse_proxy vaultwarden:80   # forward requests to the vaultwarden container, port 80
+	reverse_proxy vaultwarden:80
 }
 
 wiki.{$DOMAIN} {
@@ -15,5 +15,6 @@ wiki.{$DOMAIN} {
 }
 
 home.{$DOMAIN} {
-	reverse_proxy portal:8080      # nginx-unprivileged listens on 8080, not 80
+	reverse_proxy portal:8080
 }
+
