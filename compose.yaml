@@ -115,10 +115,61 @@ services:
       - bookstack_config:/data/bookstack:ro   # BookStack's uploads and settings, read-only
     networks: [web, bookstack-db]
 
+  authentik-db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: authentik
+      POSTGRES_USER: authentik
+      POSTGRES_PASSWORD: ${AUTHENTIK_DB_PASSWORD}
+    volumes:
+      - authentik_db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d authentik -U authentik"]   # answers once Postgres accepts connections
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [authentik-db]
+
+  authentik-server:
+    image: ghcr.io/goauthentik/server:2026.8.3
+    restart: unless-stopped
+    command: server                     # the same image runs as "server" (web + API) or "worker"
+    environment: &authentik-env         # &name = a YAML anchor: this block can be reused below
+      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY}
+      AUTHENTIK_POSTGRESQL__HOST: authentik-db
+      AUTHENTIK_POSTGRESQL__NAME: authentik
+      AUTHENTIK_POSTGRESQL__USER: authentik
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${AUTHENTIK_DB_PASSWORD}
+      AUTHENTIK_BOOTSTRAP_EMAIL: ${ACME_EMAIL}     # the first admin (akadmin), set without the web wizard
+      AUTHENTIK_BOOTSTRAP_PASSWORD_HASH: ${AUTHENTIK_BOOTSTRAP_PASSWORD_HASH}
+      AUTHENTIK_ERROR_REPORTING__ENABLED: "false"
+    volumes:
+      - authentik_data:/data
+    depends_on:
+      authentik-db:
+        condition: service_healthy
+    networks: [web, authentik-db]
+
+  authentik-worker:
+    image: ghcr.io/goauthentik/server:2026.8.3
+    restart: unless-stopped
+    command: worker                     # background tasks: emails, cleanups, certificate checks
+    environment: *authentik-env         # *name = reuse the anchored block: one place to edit
+    volumes:
+      - authentik_data:/data
+    depends_on:
+      authentik-db:
+        condition: service_healthy
+    networks: [web, authentik-db]
+
 networks:
   web: {}                            # shared by Caddy and the apps it serves
   bookstack-db:
     internal: true                   # no route in or out: only BookStack can reach its database
+  authentik-db:
+    internal: true
+
 
 volumes:                             # named volumes: data that survives "docker compose down"
   caddy_data: {}
@@ -126,4 +177,5 @@ volumes:                             # named volumes: data that survives "docker
   vaultwarden_data: {}
   bookstack_config: {}
   bookstack_db: {}
-
+  authentik_data: {}
+  authentik_db: {}
