@@ -21,3 +21,7 @@ home.{$DOMAIN} {
 auth.{$DOMAIN} {
 	reverse_proxy authentik-server:9000
 }
+
+git.{$DOMAIN} {
+	reverse_proxy forgejo:3000
+}

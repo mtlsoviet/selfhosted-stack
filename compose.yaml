@@ -175,6 +175,25 @@ services:
         condition: service_healthy
     networks: [web, authentik-db]
 
+  forgejo:
+    image: codeberg.org/forgejo/forgejo:15.0     # the LTS branch
+    restart: unless-stopped
+    environment:
+      USER_UID: "1000"                           # the user Forgejo runs as inside the container
+      USER_GID: "1000"
+      FORGEJO__database__DB_TYPE: sqlite3          # one database file in the volume
+      FORGEJO__server__DOMAIN: git.${DOMAIN}
+      FORGEJO__server__ROOT_URL: https://git.${DOMAIN}/
+      FORGEJO__server__DISABLE_SSH: "true"         # clone over HTTPS only: no extra port to open
+      FORGEJO__security__INSTALL_LOCK: "true"      # skip the web installer, which anyone could reach first
+      FORGEJO__service__DISABLE_REGISTRATION: "false"
+      FORGEJO__service__ALLOW_ONLY_EXTERNAL_REGISTRATION: "true"   # new accounts only through Authentik
+      FORGEJO__service__SHOW_REGISTRATION_BUTTON: "false"
+      FORGEJO__openid__ENABLE_OPENID_SIGNIN: "false"   # the old OpenID 2.0 login, unrelated to OIDC
+    volumes:
+      - forgejo_data:/data                        # repositories, the database, uploaded files
+    networks: [web]
+
 networks:
   web: {}                            # shared by Caddy and the apps it serves
   bookstack-db:
@@ -191,3 +210,4 @@ volumes:                             # named volumes: data that survives "docker
   bookstack_db: {}
   authentik_data: {}
   authentik_db: {}
+  forgejo_data: {}
