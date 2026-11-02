@@ -41,6 +41,18 @@ services:
       DB_DATABASE: bookstack
       DB_USERNAME: bookstack
       DB_PASSWORD: ${BOOKSTACK_DB_PASSWORD}
+      AUTH_METHOD: oidc                   # all logins go through OIDC
+      AUTH_AUTO_INITIATE: "false"         # show a "Log in with Authentik" button rather than redirecting at once
+      OIDC_NAME: Authentik                # the button's label
+      OIDC_DISPLAY_NAME_CLAIMS: name
+      OIDC_CLIENT_ID: ${BOOKSTACK_OIDC_CLIENT_ID}
+      OIDC_CLIENT_SECRET: ${BOOKSTACK_OIDC_CLIENT_SECRET}
+      OIDC_ISSUER: https://auth.${DOMAIN}/application/o/bookstack/   # trailing slash included: it must match exactly
+      OIDC_ISSUER_DISCOVER: "true"        # read the endpoints from Authentik's discovery document
+      OIDC_USER_TO_GROUPS: "true"         # sync groups to BookStack roles at each login
+      OIDC_GROUPS_CLAIM: groups
+      OIDC_REMOVE_FROM_GROUPS: "true"     # leaving the group in Authentik removes the role too
+
     volumes:
       - bookstack_config:/config     # uploads, settings and logs
     depends_on:
