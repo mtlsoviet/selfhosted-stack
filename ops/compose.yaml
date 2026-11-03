@@ -9,6 +9,7 @@ services:
       DOMAIN: ${DOMAIN}
       ACME_EMAIL: ${ACME_EMAIL}
       APPS_IP: ${APPS_IP}
+      GAME_IP: ${GAME_IP}
     volumes:
       - ./caddy:/etc/caddy:ro
       - caddy_data:/data
