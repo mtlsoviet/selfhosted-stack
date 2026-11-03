@@ -194,13 +194,65 @@ services:
       - forgejo_data:/data                        # repositories, the database, uploaded files
     networks: [web]
 
+  pterodactyl-db:
+    image: mariadb:11.4
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: ${PTERODACTYL_DB_ROOT_PASSWORD}
+      MARIADB_DATABASE: panel
+      MARIADB_USER: pterodactyl
+      MARIADB_PASSWORD: ${PTERODACTYL_DB_PASSWORD}
+    volumes:
+      - pterodactyl_db:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [pterodactyl]
+
+  pterodactyl-cache:
+    image: redis:7-alpine          # the Panel's cache, sessions and job queue
+    restart: unless-stopped
+    networks: [pterodactyl]
+
+  pterodactyl:
+    image: ghcr.io/pterodactyl/panel:v1.12.11
+    restart: unless-stopped
+    environment:
+      APP_URL: https://games.${DOMAIN}
+      APP_TIMEZONE: America/Toronto
+      APP_SERVICE_AUTHOR: ${ACME_EMAIL}     # recorded as the author of server templates you create
+      APP_ENV: production
+      APP_ENVIRONMENT_ONLY: "false"        # allow settings changed in the Panel's admin pages
+      TRUSTED_PROXIES: "*"                 # trust Caddy's forwarded headers (only Caddy can reach it)
+      DB_HOST: pterodactyl-db
+      DB_PORT: "3306"
+      DB_DATABASE: panel
+      DB_USERNAME: pterodactyl
+      DB_PASSWORD: ${PTERODACTYL_DB_PASSWORD}
+      CACHE_DRIVER: redis
+      SESSION_DRIVER: redis
+      QUEUE_DRIVER: redis
+      REDIS_HOST: pterodactyl-cache
+    volumes:
+      - pterodactyl_var:/app/var           # holds the Panel's generated encryption key: back it up (Part G)
+      - pterodactyl_logs:/app/storage/logs
+    depends_on:
+      pterodactyl-db:
+        condition: service_healthy
+      pterodactyl-cache:
+        condition: service_started
+    networks: [web, pterodactyl]
+
 networks:
   web: {}                            # shared by Caddy and the apps it serves
   bookstack-db:
     internal: true                   # no route in or out: only BookStack can reach its database
   authentik-db:
     internal: true
-
+  pterodactyl:
+    internal: true
 
 volumes:                             # named volumes: data that survives "docker compose down"
   caddy_data: {}
@@ -211,3 +263,7 @@ volumes:                             # named volumes: data that survives "docker
   authentik_data: {}
   authentik_db: {}
   forgejo_data: {}
+  pterodactyl_db: {}
+  pterodactyl_var: {}
+  pterodactyl_logs: {}
+
