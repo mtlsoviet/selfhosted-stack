@@ -112,7 +112,7 @@ services:
       - /dev/disk/:/dev/disk:ro
 
   stack-backup:
-    image: alexvirtu/stack-backup:1.0.0
+    image: alexvirtu/stack-backup:1.1.0
     profiles: [backup]
     environment:
       RESTIC_REPOSITORY: s3:https://s3.${DOMAIN}/backups   # restic's address for the Garage bucket
@@ -122,10 +122,14 @@ services:
       AWS_DEFAULT_REGION: garage                           # must match s3_region in garage.toml
       BOOKSTACK_DB_ROOT_PASSWORD: ${BOOKSTACK_DB_ROOT_PASSWORD}
       TZ: America/Toronto
+      AUTHENTIK_DB_PASSWORD: ${AUTHENTIK_DB_PASSWORD}
+      PTERODACTYL_DB_ROOT_PASSWORD: ${PTERODACTYL_DB_ROOT_PASSWORD}
     volumes:
+      - forgejo_data:/data/forgejo
+      - pterodactyl_var:/data/pterodactyl-var:ro
       - vaultwarden_data:/data/vaultwarden    # read-write: sqlite3 needs it to make a safe copy
       - bookstack_config:/data/bookstack:ro   # BookStack's uploads and settings, read-only
-    networks: [web, bookstack-db]
+    networks: [web, bookstack-db, authentik-db, pterodactyl]
 
   authentik-db:
     image: postgres:16-alpine
