@@ -10,6 +10,7 @@ services:
       ACME_EMAIL: ${ACME_EMAIL}
       APPS_IP: ${APPS_IP}
       GAME_IP: ${GAME_IP}
+      DEV_IP: ${DEV_IP}
     volumes:
       - ./caddy:/etc/caddy:ro
       - caddy_data:/data
