@@ -21,6 +21,8 @@ scrape_configs:                  # one "job" per kind of target
         labels: {vm: apps}       # a label we add, so alerts and graphs say which VM
       - targets: ["host.docker.internal:9100"]
         labels: {vm: ops}
+      - targets: ["node1.comradecollective.ca:9100"]
+        labels: {vm: game}
 
   - job_name: cadvisor
     static_configs:
