@@ -239,6 +239,14 @@ services:
       SESSION_DRIVER: redis
       QUEUE_DRIVER: redis
       REDIS_HOST: pterodactyl-cache
+      APP_BACKUP_DRIVER: s3
+      AWS_DEFAULT_REGION: garage
+      AWS_ACCESS_KEY_ID: ${PTERODACTYL_S3_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${PTERODACTYL_S3_SECRET_KEY}
+      AWS_BACKUPS_BUCKET: game-backups
+      AWS_ENDPOINT: https://s3.${DOMAIN}
+      AWS_USE_PATH_STYLE_ENDPOINT: "true"
+
     volumes:
       - pterodactyl_var:/app/var           # holds the Panel's generated encryption key: back it up (Part G)
       - pterodactyl_logs:/app/storage/logs
