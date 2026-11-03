@@ -25,3 +25,7 @@ auth.{$DOMAIN} {
 git.{$DOMAIN} {
 	reverse_proxy forgejo:3000
 }
+
+games.{$DOMAIN} {
+	reverse_proxy pterodactyl:80
+}
