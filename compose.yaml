@@ -217,7 +217,7 @@ services:
     networks: [pterodactyl]
 
   pterodactyl:
-    image: ghcr.io/pterodactyl/panel:v1.12.11
+    image: ghcr.io/pterodactyl/panel:v1.12.3
     restart: unless-stopped
     environment:
       APP_URL: https://games.${DOMAIN}
