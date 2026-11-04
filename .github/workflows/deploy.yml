@@ -62,7 +62,7 @@ jobs:
       - name: Prepare SSH
         env:
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
-          APPS_KNOWN_HOSTS: ${{ secrets.APPS_KNOWN_HOSTS }}
+          APPS_KNOWN_HOSTS: ${{ vars.APPS_KNOWN_HOSTS }}
         run: |
           install -m 700 -d ~/.ssh
           printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
@@ -70,7 +70,7 @@ jobs:
           printf '%s\n' "$APPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
       - name: Deploy to apps
         env:
-          APPS_HOST: ${{ secrets.APPS_HOST }}
+          APPS_HOST: ${{ vars.APPS_HOST }}
         run: ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes "deploy@$APPS_HOST"
 
   deploy-ops:
@@ -81,7 +81,7 @@ jobs:
       - name: Prepare SSH
         env:
           OPS_DEPLOY_SSH_KEY: ${{ secrets.OPS_DEPLOY_SSH_KEY }}
-          OPS_KNOWN_HOSTS: ${{ secrets.OPS_KNOWN_HOSTS }}
+          OPS_KNOWN_HOSTS: ${{ vars.OPS_KNOWN_HOSTS }}
         run: |
           install -m 700 -d ~/.ssh
           printf '%s\n' "$OPS_DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
@@ -89,5 +89,5 @@ jobs:
           printf '%s\n' "$OPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
       - name: Deploy to ops
         env:
-          OPS_HOST: ${{ secrets.OPS_HOST }}
+          OPS_HOST: ${{ vars.OPS_HOST }}
         run: ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes "deploy@$OPS_HOST"
